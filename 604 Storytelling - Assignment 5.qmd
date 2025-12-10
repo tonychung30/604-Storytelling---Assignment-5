@@ -17,6 +17,8 @@ This was a final project that tested the fertility rates in different regions of
 
 [View my class project here](FinalAssignment.html)
 
+[View my Shiny Dashboard here](https://tonychung.shinyapps.io/sentiment-dashboard/)
+
 ```{r}
 
 ```
