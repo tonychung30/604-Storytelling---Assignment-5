@@ -1,0 +1,48 @@
+
+OLS Regression
+===============================================
+                        Dependent variable:    
+                    ---------------------------
+                          Life Expectancy      
+-----------------------------------------------
+Log Fertility                -8.501***         
+                              (1.299)          
+                                               
+Urbanization %                 0.018           
+                              (0.022)          
+                                               
+Log GDP                      1.958***          
+                              (0.413)          
+                                               
+Region                       7.019***          
+                              (1.093)          
+                                               
+regionCaribbean              7.330***          
+                              (1.505)          
+                                               
+regionEurope                 7.108***          
+                              (1.426)          
+                                               
+regionLatin Amer             9.765***          
+                              (1.338)          
+                                               
+regionNorth America           8.224**          
+                              (3.421)          
+                                               
+regionNorthAtlantic           -0.646           
+                              (4.651)          
+                                               
+regionOceania                6.890***          
+                              (1.353)          
+                                               
+Constant                     57.007***         
+                              (3.730)          
+                                               
+-----------------------------------------------
+Observations                    199            
+R2                             0.811           
+Adjusted R2                    0.801           
+Residual Std. Error      4.512 (df = 188)      
+F Statistic          80.886*** (df = 10; 188)  
+===============================================
+Note:               *p<0.1; **p<0.05; ***p<0.01

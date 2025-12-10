@@ -1,0 +1,28 @@
+project:
+  type: website
+  output-dir: docs #this will determine where your rendered pages (in this example, Project1 and 2) are stored. 
+  
+website:
+  title: "Tony Chung - 604 Assignment 5"
+  navbar:
+    left:
+      - href: 604 Storytelling - Assignment 5.qmd
+        text: Home
+      - FinalAssignment.qmd
+    tools:
+      - icon: github
+        href: https://github.com/tonychung30/604-Storytelling---Assignment-5
+  page-footer:
+    right: "Built with [Quarto](https://quarto.org/)"
+    left: "&copy; Copyright 2025, Erico Yu. All rights reserved."
+
+format:
+  html:
+    theme: journal
+    toc: true
+
+editor: source
+
+#remember to inlude the following lines to include all files in the `files/` folder that you want to link to.
+resources: 
+  - "files/**"

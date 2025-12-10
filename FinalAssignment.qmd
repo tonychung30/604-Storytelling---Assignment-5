@@ -1,0 +1,236 @@
+---
+title: 'Final Assignment'
+author: "Tony Chung"
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+## Final Assignment
+
+```{r setup, include=TRUE}
+
+library(haven)
+library(ggplot2)
+library(rstatix)
+library(tidyverse)
+library(skimr)
+library(descr)
+library(labelled)
+library(alr4)
+library(smss)
+library(ggeffects)
+library(ggplot2)
+library(stargazer)
+library(lmtest)
+
+data("UN11")
+
+```
+
+1.  
+
+```{r}
+print(UN11)
+
+cv <- UN11[, sapply(UN11, is.numeric)]
+
+for (var in names(cv)) {
+  
+hist <- ggplot(UN11, aes_string(x = var)) +
+    geom_histogram(binwidth = 10, fill = "white",color = "darkgreen", alpha = 0.7) +
+    labs(title = paste(var), x = var, y = "Frequency") +
+    theme_dark() +
+    theme(plot.title = element_text(hjust = 1))
+
+print(hist) }
+
+```
+
+Based on the histograms of the continuous variables, fertility and ppgdp results are a bit skewed. Fertility reports back negatives in a weird way and ppgdp is too spread out. Through inspection, I decided to log transform these two continuous variables.
+
+```{r}
+UN11$log_fertility <- log1p(UN11$fertility)  
+UN11$log_ppgdp <- log1p(UN11$ppgdp)        
+
+ggplot(UN11, aes(x = log_fertility)) +
+  geom_histogram(binwidth = 0.1, color = "lightblue", alpha = 1) +
+  labs(
+    title = "Log Transformed Fertility",
+    x = "Log Fertility",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+ggplot(UN11, aes(x = log_ppgdp)) +
+  geom_histogram(binwidth = 0.1, color = "red", alpha = 1) +
+  labs(
+    title = "Log-Transformed PPGDP",
+    x = "Log PPGDP",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+
+```
+
+2.  
+
+```{r}
+anova <- aov(lifeExpF ~ group, data = UN11)
+
+summary(anova)
+
+posthoc <- TukeyHSD(anova)
+
+print(posthoc)
+
+plot(posthoc)
+```
+
+The result of the ANOVA test shows that the P-Value is \<0.05, therefore we would reject the null hypothesis. In this case, this means that the groups have major difference in life expectancy since we are rejecting the null hypothesis.
+
+In the plot of the Tukey test, you can see the mean is different for each group, signifying that there is significant difference between the groups.
+
+3\.
+
+```{r}
+cm <- cor(cv, use = "complete.obs", method = "pearson")
+
+print(cm)
+
+#plot(cm)
+```
+
+According to the Week 2 lecture slides, the size of correlation is as follows: +-.9 to 1.0 is very high correlation, +-.7 to .9 is high correlation, +-.5 to .7 is moderate correlation, +-.3 to .5 is low correlation and +-.0 to .3 is negligible correlation. In relation to the continuous variables, fertility and ppgdp has a moderate negative correlation, meaning fertility has moderate impact on ppgdp. Fertility and lifeExpF has a high negative correlation, meaning fertility has a high impact on life expectancy. These are all listed in the summary, but to summarize, a positive correlation means they are more closely related, while negative is the opposite.
+
+4\.
+
+Fertility and life expectancy have a high negative correlation (meaning lower life expectancy), so a hypothesis could be countries with higher fertility rates have worse or not as developed healthcare systems.
+
+PctUrban (Urban percent) and life expectancy have a moderate positive correlation, meaning urban areas are more likely to have a higher life expectancy. A hypothesis could be that urban areas are further developed and have better healthcare systems.
+
+PPGDP and life expectancy have a moderate positive correlation, meaning higher gdp is tied into a higher life expectancy. A hypothesis for this could be that wealthier areas and countries have more money to spend on better healthcare and services.
+
+I will incorporate region but not group in my model, as I think it is important to see the region associated with the DV. The group however, is not relevant as it is not specific enough (Africa or unspecified country).
+
+```{r}
+#head(UN11)
+
+ols <- lm(
+  lifeExpF ~ fertility + pctUrban + ppgdp + region,
+  data = UN11)
+
+summary(ols)
+plot(ols)
+
+```
+
+```{r}
+qqnorm(resid(ols))
+qqline(resid(ols))
+hist(resid(ols), main = "Residuals", xlab = "Residuals", ylab = "Freq")
+
+bptest(ols)
+
+vif(ols)
+
+cooksd <- cooks.distance(ols)
+  plot(cooksd, cex = 1, main = "Cook's Distance")
+  abline(h = 5 / nrow(UN11), col = "red")
+  
+#OLS assumptions
+#Normality - this is normal as most of the points fall along the diagonal line in the Q-Q Residuals plot.
+#Homoscedasticity - there is no cone shape in Scale-Location, therfore no homoscedasticity.
+#Multicollinearity - none of the VIFs are over 5, so there is not multicollinearity.
+#Outliers (Cook's Distance) - Using Cook's distance plot, you can see there is 1 clear outlier (greater than 1.0).
+```
+
+```{r}
+new_model <- lm(
+  lifeExpF ~ log(fertility) + pctUrban + log(ppgdp) + region,
+  data = UN11
+)
+
+summary(new_model)
+
+stargazer(new_model, type = "text",
+          title = "OLS Regression",
+          covariate.labels = c(
+            "Log Fertility", "Urbanization %", "Log GDP", "Region"),
+          dep.var.labels = "Life Expectancy",
+          out = "regression_table.txt")
+```
+
+5.  In the model, the beta weights for urbanization %, log GDP and region are all positive, while log fertility is a negative beta weight. The significance for each of these (using p\<0.05 as significant), is log fertility, log GDP and region (mostly) are all significant, meaning these independent variables all impact the DV. Fertility is significant negatively tied to life expectancy as regions with higher fertility rates may have less healthcare access, meaning their life expectancies are not as high. Surprising to me, urban % does not have a significant impact on life expectancy. This could be due to the data of the regions; maybe if I had included "group" this p-value might have changed. Log gdp and life expectancy has a significant positive correlation as people from regions with more money have better access to healthcare and can afford better healthcare services generally speaking. The significance of the Caribbean, Europe, Latin America, North America and Oceania are all significant; while North Atlantic is not.
+
+    As for model fit statistics, it is 0.8114, so this is generally a good and accurate model as you want this number as close to 1 as possible. There could be some factors that make this model inaccurate, which is why it's only 0.8114.
+
+    This OLS model explains that higher fertility is correlated in lower life expectancy, urban percentage is slightly positivley correlated to life expectancy (however this might not be significant), higher GDP is correlated with higher life expectancy, and region plays a factor in life expectancy (Caribbean, Europe, Latin America, North America and Oceania are all significant).
+
+6\.
+
+```{r}
+fertility <- ggpredict(new_model, terms = "fertility")
+urban <- ggpredict(new_model, terms = "pctUrban")
+ppgdp <- ggpredict(new_model, terms = "ppgdp")
+region <- ggpredict(new_model, terms = "region")
+
+fertility_plot <- ggplot(fertility, aes(x = x, y = predicted)) +
+  geom_line(color = "blue") +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+  labs(title = "Life Expectancy by Fertility",
+       x = "Fertility",
+       y = "Life Expectancy") +
+  theme_minimal()
+
+urban_plot <- ggplot(urban, aes(x = x, y = predicted)) +
+  geom_line(color = "green") +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+  labs(title = "Life Expectancy by Urban %",
+       x = "Urban %",
+       y = "Life Expectancy") +
+  theme_minimal()
+
+ppgdp_plot <- ggplot(ppgdp, aes(x = x, y = predicted)) +
+  geom_line(color = "red") +
+  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.1) +
+  labs(title = "Life Expectancy by GDP",
+       x = "GDP",
+       y = "Life Expectancy") +
+  theme_minimal()
+
+region_plot <- ggplot(region, aes(x = x, y = predicted, fill = x)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.1) +
+  scale_fill_manual(values = c(
+    "lightblue", "blue", "darkblue", "cyan", "purple","lavender","grey","pink" )) +
+  labs(title = "Life Expectancy in Regions",
+       x = "Region",
+       y = " Expectancy") +
+  theme_dark()
+
+fertility_plot
+urban_plot
+ppgdp_plot
+region_plot
+```
+
+Life Expectancy by Fertility
+
+-   Shows the correlation between a higher fertility relates to a lower life expectancy.
+
+Life Expectancy by Urban %
+
+-   Shows a positive correlation between higher urban percentage and life expectancy.
+
+Life Expectancy by GDP
+
+-   Shows the correlation between higher GDP relates to higher life expectancy.
+
+Life Expectancy in Regions
+
+-   Shows the general mean life expectancy in specific regions.
+
+7.  The factors that are influential in life expectancy are fertility, urban percentage, and GDP. Fertility is highly negatively impacts life expectancy. Urban percentage has a slight positive impact, however not significant. This could be due to the city within the region and fertility/GDP factors within the city itself. GDP greatly positively impacts life expectancy as the more wealth a region has, the more money it can spend of healthcare and factors associated with long-term health (better food, better infrastructure, better access to healthcare, etc.).
